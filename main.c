@@ -9,9 +9,11 @@ static const char* appname;
 
 static void print_bn(const char *what, const BIGNUM *bn)
 {
+#ifdef DEBUG
     char *str = BN_bn2hex(bn);
     printf("%s (hex): %s\n", what, str);
     OPENSSL_free(str);
+#endif
 }
 
 static void usage(void)
