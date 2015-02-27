@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <openssl/bn.h>
+#include <openssl/rsa.h>
 
 static const char* appname;
 
@@ -16,6 +17,9 @@ static void usage(void)
 {
     fprintf(stderr, "Usage: %s modulus-file exponent\n", appname);
 }
+
+#define err(fmt, ...)   \
+    fprintf(stderr, "%s: " fmt, appname, ##__VA_ARGS__)
 
 int main(int argc, char *argv[])
 {
@@ -32,31 +36,38 @@ int main(int argc, char *argv[])
     /* Read modulus */
     FILE *mf = fopen(modfile, "rb");
     if (!mf) {
-        fprintf(stderr, "%s: Failed to open \"%s\": %m\n", appname, modfile);
+        err("Failed to open \"%s\": %m\n", modfile);
         return 1;
     }
 
     unsigned char buf[256];
     if (fread(buf, sizeof(buf), 1, mf) != 1) {
-        fprintf(stderr, "%s: Failed to read %zu bytes of modulus\n", appname, sizeof(buf));
+        err("Failed to read %zu bytes of modulus\n", sizeof(buf));
         return 1;
     }
 
     BIGNUM *mod = BN_bin2bn(buf, sizeof(buf), NULL);
     if (!mod) {
-        fprintf(stderr, "BN_bin2bn() failed\n");
+        err("BN_bin2bn() failed\n");
         return 1;
     }
     print_bn("Modulus", mod);
    
 
+    /* Parse exponent */
     BIGNUM *exp = NULL;
     if (BN_dec2bn(&exp, expstr) == 0) {
-        fprintf(stderr, "BN_dec2bn() failed\n");
+        err("BN_dec2bn() failed\n");
         return 1;
     }
     print_bn("Exponent", exp);
 
+    /* Create RSA key */
+    RSA *rsa = RSA_new();
+    if (!rsa || 1) {
+        err("RSA_new() failed\n");
+        return 1;
+    }
 
     return 0;
 }
