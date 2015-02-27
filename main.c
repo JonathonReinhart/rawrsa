@@ -1,5 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <libgen.h>
 #include <openssl/bn.h>
+
+static const char* appname;
 
 static void print_bn(const char *what, const BIGNUM *bn)
 {
@@ -8,15 +12,35 @@ static void print_bn(const char *what, const BIGNUM *bn)
     OPENSSL_free(str);
 }
 
-int main(void)
+static void usage(void)
 {
-    FILE *f = fopen("key.bin", "rb");
-    if (!f)
+    fprintf(stderr, "Usage: %s modulus-file exponent\n", appname);
+}
+
+int main(int argc, char *argv[])
+{
+    appname = basename(argv[0]);
+
+    if (argc < 3) {
+        usage();
+        exit(1);
+    }
+
+    const char *modfile = argv[1];
+    const char *expstr = argv[2];
+
+    /* Read modulus */
+    FILE *mf = fopen(modfile, "rb");
+    if (!mf) {
+        fprintf(stderr, "%s: Failed to open \"%s\": %m\n", appname, modfile);
         return 1;
+    }
 
     unsigned char buf[256];
-    if (fread(buf, sizeof(buf), 1, f) != 1)
+    if (fread(buf, sizeof(buf), 1, mf) != 1) {
+        fprintf(stderr, "%s: Failed to read %zu bytes of modulus\n", appname, sizeof(buf));
         return 1;
+    }
 
     BIGNUM *mod = BN_bin2bn(buf, sizeof(buf), NULL);
     if (!mod) {
@@ -27,7 +51,7 @@ int main(void)
    
 
     BIGNUM *exp = NULL;
-    if (BN_dec2bn(&exp, "65537") == 0) {
+    if (BN_dec2bn(&exp, expstr) == 0) {
         fprintf(stderr, "BN_dec2bn() failed\n");
         return 1;
     }
