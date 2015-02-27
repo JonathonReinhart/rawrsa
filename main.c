@@ -3,6 +3,7 @@
 #include <libgen.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
+#include <openssl/pem.h>
 
 static const char* appname;
 
@@ -46,6 +47,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    fclose(mf);
+
     BIGNUM *mod = BN_bin2bn(buf, sizeof(buf), NULL);
     if (!mod) {
         err("BN_bin2bn() failed\n");
@@ -64,10 +67,26 @@ int main(int argc, char *argv[])
 
     /* Create RSA key */
     RSA *rsa = RSA_new();
-    if (!rsa || 1) {
+    if (!rsa) {
         err("RSA_new() failed\n");
         return 1;
     }
+    rsa->e = exp;
+    rsa->n = mod;
+
+    /* Write RSA key to a file */
+    FILE *rpk = fopen("public_key.pem", "wb");
+    if (!rpk) {
+        err("Failed to open public key file");
+        return 1;
+    }
+
+    if (!PEM_write_RSAPublicKey(rpk, rsa)) {
+        err("PEM_write_RSAPublicKey() failed\n");
+        return 1;
+    }
+
+    fclose(rpk);
 
     return 0;
 }
