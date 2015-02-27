@@ -76,19 +76,11 @@ int main(int argc, char *argv[])
     rsa->e = exp;
     rsa->n = mod;
 
-    /* Write RSA key to a file */
-    FILE *rpk = fopen("public_key.pem", "wb");
-    if (!rpk) {
-        err("Failed to open public key file");
-        return 1;
-    }
-
-    if (!PEM_write_RSAPublicKey(rpk, rsa)) {
+    /* Write PEM-encoded RSA public key to stdout */
+    if (!PEM_write_RSAPublicKey(stdout, rsa)) {
         err("PEM_write_RSAPublicKey() failed\n");
         return 1;
     }
-
-    fclose(rpk);
 
     return 0;
 }
