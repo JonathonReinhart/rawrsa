@@ -1,5 +1,7 @@
 # rawrsa
-Create PEM-encoded RSA pubilc key from raw modulus / exponent
+Create PEM-encoded RSA pubilc key from raw modulus / exponent.
+
+Inspired by: http://stackoverflow.com/questions/28770426/
 
 ### Building
 
