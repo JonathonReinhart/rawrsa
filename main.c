@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
+#include <limits.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 
-#ifndef MAX_MOD_SIZE
-#define MAX_MOD_SIZE    0x1000
-#endif
+#define MAX_MOD_SIZE    (OPENSSL_RSA_MAX_MODULUS_BITS * CHAR_BIT)
 
 #define err(fmt, ...)   \
     fprintf(stderr, "%s: " fmt, appname, ##__VA_ARGS__)
