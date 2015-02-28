@@ -5,6 +5,13 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 
+#ifndef MAX_MOD_SIZE
+#define MAX_MOD_SIZE    0x1000
+#endif
+
+#define err(fmt, ...)   \
+    fprintf(stderr, "%s: " fmt, appname, ##__VA_ARGS__)
+
 static const char* appname;
 
 static void print_bn(const char *what, const BIGNUM *bn)
@@ -20,9 +27,6 @@ static void usage(void)
 {
     fprintf(stderr, "Usage: %s modulus-file exponent\n", appname);
 }
-
-#define err(fmt, ...)   \
-    fprintf(stderr, "%s: " fmt, appname, ##__VA_ARGS__)
 
 int main(int argc, char *argv[])
 {
@@ -43,15 +47,20 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    unsigned char buf[256];
-    if (fread(buf, sizeof(buf), 1, mf) != 1) {
+    unsigned char buf[MAX_MOD_SIZE];
+    size_t n;
+    if ((n = fread(buf, 1, sizeof(buf), mf)) == 0) {
         err("Failed to read %zu bytes of modulus\n", sizeof(buf));
         return 1;
+    }
+    if (n == sizeof(buf) && !feof(mf)) {
+        err("Warning: modulus truncated to maximum size (%zu bytes)\n",
+                sizeof(buf));
     }
 
     fclose(mf);
 
-    BIGNUM *mod = BN_bin2bn(buf, sizeof(buf), NULL);
+    BIGNUM *mod = BN_bin2bn(buf, n, NULL);
     if (!mod) {
         err("BN_bin2bn() failed\n");
         return 1;
