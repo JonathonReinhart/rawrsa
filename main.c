@@ -8,7 +8,7 @@
 #include <openssl/pem.h>
 
 #define MAX_MOD_SIZE        (OPENSSL_RSA_MAX_MODULUS_BITS * CHAR_BIT)
-#define DEFAULT_EXPONENT    65537
+#define DEFAULT_EXPONENT    65537ul
 
 #define err(fmt, ...)   \
     fprintf(stderr, "%s: " fmt, appname, ##__VA_ARGS__)
@@ -31,9 +31,9 @@ static void usage(void)
         " %s [options] <modulus-file>\n"
         "\n"
         "Options:\n"
-        " -e, --exponent EXP\n"
+        " -e, --exponent EXP  Exponent, defaults to %lu\n"
         "\n",
-        appname);
+        appname, DEFAULT_EXPONENT);
 }
 
 static unsigned long exponent = DEFAULT_EXPONENT;
