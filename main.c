@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
     rsa->n = mod;
 
     /* Write PEM-encoded RSA public key to stdout */
-    if (!PEM_write_RSAPublicKey(stdout, rsa)) {
+    if (!PEM_write_RSA_PUBKEY(stdout, rsa)) {
         err("PEM_write_RSAPublicKey() failed\n");
         return 1;
     }
