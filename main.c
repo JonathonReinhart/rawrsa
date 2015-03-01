@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <limits.h>
+#include <getopt.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 
-#define MAX_MOD_SIZE    (OPENSSL_RSA_MAX_MODULUS_BITS * CHAR_BIT)
+#define MAX_MOD_SIZE        (OPENSSL_RSA_MAX_MODULUS_BITS * CHAR_BIT)
+#define DEFAULT_EXPONENT    65537
 
 #define err(fmt, ...)   \
     fprintf(stderr, "%s: " fmt, appname, ##__VA_ARGS__)
@@ -24,20 +26,60 @@ static void print_bn(const char *what, const BIGNUM *bn)
 
 static void usage(void)
 {
-    fprintf(stderr, "Usage: %s modulus-file exponent\n", appname);
+    fprintf(stderr, "\n"
+        "Usage:\n"
+        " %s [options] <modulus-file>\n"
+        "\n"
+        "Options:\n"
+        " -e, --exponent EXP\n"
+        "\n",
+        appname);
+}
+
+static unsigned long exponent = DEFAULT_EXPONENT;
+static const char *modfile;
+
+static void parse_opts(int argc, char *argv[])
+{
+    int long_index = 0;
+    int opt;
+
+    static struct option long_options[] = {
+        {"exponent", required_argument, 0, 'e'},
+    };
+
+    while ((opt = getopt_long(argc, argv, "e:",
+                    long_options, &long_index)) != -1) {
+        switch (opt) {
+            case 'e':
+                if (sscanf(optarg, "%lu", &exponent) != 1) {
+                    err("Invalid exponent: \"%s\"\n", optarg);
+                    exit(1);
+                }
+                break;
+
+            default:
+                usage();
+                exit(1);
+                break;
+        }
+    }
+
+    argv += optind;
+    argc -= optind;
+
+    if (argc < 1) {
+        err("Missing argument\n");
+        usage();
+        exit(1);
+    }
+    modfile = argv[0];
 }
 
 int main(int argc, char *argv[])
 {
     appname = basename(argv[0]);
-
-    if (argc < 3) {
-        usage();
-        exit(1);
-    }
-
-    const char *modfile = argv[1];
-    const char *expstr = argv[2];
+    parse_opts(argc, argv);
 
     /* Read modulus */
     FILE *mf = fopen(modfile, "rb");
@@ -68,9 +110,9 @@ int main(int argc, char *argv[])
    
 
     /* Parse exponent */
-    BIGNUM *exp = NULL;
-    if (BN_dec2bn(&exp, expstr) == 0) {
-        err("BN_dec2bn() failed\n");
+    BIGNUM *exp = BN_new();
+    if (BN_set_word(exp, exponent) == 0) {
+        err("BN_set_word() failed\n");
         return 1;
     }
     print_bn("Exponent", exp);
