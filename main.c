@@ -45,7 +45,8 @@ static void parse_opts(int argc, char *argv[])
     int opt;
 
     static struct option long_options[] = {
-        {"exponent", required_argument, 0, 'e'},
+        {"exponent",    required_argument,  0,  'e'},
+        {NULL,          0,                  0,  0}
     };
 
     while ((opt = getopt_long(argc, argv, "e:",
