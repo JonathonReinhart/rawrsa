@@ -24,6 +24,38 @@ static void print_bn(const char *what, const BIGNUM *bn)
 #endif
 }
 
+/**
+ * OpenSSL pre-1.1 compatibility
+ * https://wiki.openssl.org/index.php/OpenSSL_1.1.0_Changes
+ */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
+{
+    /* If the fields n and e in r are NULL, the corresponding input
+     * parameters MUST be non-NULL for n and e.  d may be
+     * left NULL (in case only the public key is used).
+     */
+    if ((r->n == NULL && n == NULL)
+        || (r->e == NULL && e == NULL))
+        return 0;
+
+    if (n != NULL) {
+        BN_free(r->n);
+        r->n = n;
+    }
+    if (e != NULL) {
+        BN_free(r->e);
+        r->e = e;
+    }
+    if (d != NULL) {
+        BN_free(r->d);
+        r->d = d;
+    }
+
+    return 1;
+}
+#endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
+
 static void usage(void)
 {
     fprintf(stderr, "\n"
@@ -124,8 +156,7 @@ int main(int argc, char *argv[])
         err("RSA_new() failed\n");
         return 1;
     }
-    rsa->e = exp;
-    rsa->n = mod;
+    RSA_set0_key(rsa, mod, exp, NULL);
 
     /* Write PEM-encoded RSA public key to stdout */
     if (!PEM_write_RSA_PUBKEY(stdout, rsa)) {
