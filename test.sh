@@ -9,8 +9,8 @@ scons
 # Reconstruct public key
 ./rawrsa -e $EXP pubmod.bin > public_out.pem
 
-# Reconstruct private key
-./rawrsa -e $EXP --privexp privexp.bin pubmod.bin > private_out.pem
+# Reconstruct expanded private key
+./rawrsa -e $EXP --privexp privexp.bin --expand pubmod.bin > private_out.pem
 
 # Compare
 md5sum *.pem

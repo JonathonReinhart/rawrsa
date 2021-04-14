@@ -78,6 +78,7 @@ static void usage(void)
         "Options:\n"
         " -e, --exponent EXP    Exponent, defaults to %lu\n"
         " -p, --privexp  FILE   Private exponent bignum file\n"
+        " -x, --expand          Expand private key to CRT form (requires -p)\n"
         "\n"
         "If --privexp is given, output format is a private key.\n",
         appname, DEFAULT_EXPONENT);
@@ -86,6 +87,7 @@ static void usage(void)
 static unsigned long exponent = DEFAULT_EXPONENT;
 static const char *modfile;
 static const char *privexp_file;
+static bool expand_privkey;
 
 static void parse_opts(int argc, char *argv[])
 {
@@ -94,11 +96,12 @@ static void parse_opts(int argc, char *argv[])
 
     static struct option long_options[] = {
         {"exponent",    required_argument,  0,  'e'},
+        {"expand",      no_argument,        0,  'x'},
         {"privexp",     required_argument,  0,  'p'},
         {NULL,          0,                  0,  0}
     };
 
-    while ((opt = getopt_long(argc, argv, "e:p:",
+    while ((opt = getopt_long(argc, argv, "e:p:x",
                     long_options, &long_index)) != -1) {
         switch (opt) {
             case 'e':
@@ -112,11 +115,21 @@ static void parse_opts(int argc, char *argv[])
                 privexp_file = optarg;
                 break;
 
+            case 'x':
+                expand_privkey = true;
+                break;
+
             default:
                 usage();
                 exit(1);
                 break;
         }
+    }
+
+    if (expand_privkey && !privexp_file) {
+        err("-x/--expand requires -p/--privexp\n");
+        usage();
+        exit(1);
     }
 
     argv += optind;
@@ -262,10 +275,13 @@ int main(int argc, char *argv[])
         }
         dbg("RSA key consistency ok\n");
 
-        /* Expand the private key to include factors and crt params */
-        if (!expand_rsa_sfm_to_crt(rsa)) {
-            err("Unable to expand RSA key\n");
-            return 2;
+        if (expand_privkey) {
+            /* Expand the private key to include factors and crt params */
+            if (!expand_rsa_sfm_to_crt(rsa)) {
+                err("Unable to expand RSA key\n");
+                return 2;
+            }
+            dbg("Expanded RSA key to full CRT form\n");
         }
 
         /* Write PEM-encoded RSA private key to stdout */
