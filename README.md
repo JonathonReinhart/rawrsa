@@ -1,4 +1,6 @@
 # rawrsa
+![Build and Test badge](https://github.com/JonathonReinhart/rawrsa/actions/workflows/build-test.yml/badge.svg)
+
 Create PEM-encoded RSA public key from raw modulus and public exponent.
 Optionally create an RSA private key by supplying a raw private exponent.
 
