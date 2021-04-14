@@ -1,5 +1,13 @@
 env = Environment(
-    CCFLAGS=['-Wall','-Werror','-g']
+    CCFLAGS=['-Wall','-Werror','-g'],
+    #CPPDEFINES={'DEBUG': None},
 )
 
-env.Program('rawrsa', ['main.c'], LIBS=['crypto'])
+env.Program(
+    target = 'rawrsa',
+    source = [
+        'main.c',
+        'librsaconverter.c',
+    ],
+    LIBS=['crypto'],
+)

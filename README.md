@@ -1,5 +1,6 @@
 # rawrsa
-Create PEM-encoded RSA pubilc key from raw modulus / exponent.
+Create PEM-encoded RSA public key from raw modulus and public exponent.
+Optionally create an RSA private key by supplying a raw private exponent.
 
 Inspired by: http://stackoverflow.com/questions/28770426/
 
@@ -14,22 +15,27 @@ gcc -o rawrsa main.o -lcrypto
 ```
 
 ### Usage
-
 ```
 Usage:
  rawrsa [options] <modulus-file>
 
 Options:
- -e, --exponent EXP  Exponent, defaults to 65537
+ -e, --exponent EXP    Exponent, defaults to 65537
+ -p, --privexp  FILE   Private exponent bignum file
 
-$ xxd -p 128.key 
+If --privexp is given, output format is a private key.
+```
+
+Example:
+```
+$ xxd -p raw.key
 6ee3acb0684af2d99d68431e411c790170e126157237ad87b65f8ba1a5a6
 e3a93f92e68051f234ece01d5076f2b4d344d48cc332bf76c55cac8a08af
 5c667acac1332755b8dacdf290ae10e5e1d8442f8f3a21524be32d0823a1
 6c20833e3d4a9e410924a79f7c3fa57b69b33662ef0653e0267416f69b78
 07a837dda378e39c
 
-$ ./rawrsa -e 65537 128.key  | openssl rsa -pubin -text
+$ ./rawrsa -e 65537 raw.key  | openssl rsa -pubin -text
 Public-Key: (1023 bit)
 Modulus:
     6e:e3:ac:b0:68:4a:f2:d9:9d:68:43:1e:41:1c:79:
@@ -49,5 +55,6 @@ cjeth7Zfi6GlpuOpP5LmgFHyNOzgHVB28rTTRNSMwzK/dsVcrIoIr1xmesrBMydV
 uNrN8pCuEOXh2EQvjzohUkvjLQgjoWwggz49Sp5BCSSnn3w/pXtpszZi7wZT4CZ0
 FvabeAeoN92jeOOcAgMBAAE=
 -----END PUBLIC KEY-----
-
 ```
+
+See test.sh for advanced usage and test.
