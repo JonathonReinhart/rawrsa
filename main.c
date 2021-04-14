@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <libgen.h>
 #include <limits.h>
 #include <getopt.h>
@@ -7,6 +8,8 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+
+#include "librsaconverter.h"
 
 #define MAX_MOD_SIZE        (OPENSSL_RSA_MAX_MODULUS_BITS * CHAR_BIT)
 #define DEFAULT_EXPONENT    65537ul
@@ -172,6 +175,14 @@ out:
     return res;
 }
 
+static bool check_rsa_sfm(const RSA *rsa)
+{
+    const BIGNUM *n, *e, *d;
+
+    RSA_get0_key(rsa, &n, &e, &d);
+    return CheckRsaSfmKey(n, e, d);
+}
+
 int main(int argc, char *argv[])
 {
     BIGNUM *mod = NULL;
@@ -211,20 +222,12 @@ int main(int argc, char *argv[])
     RSA_set0_key(rsa, mod, exp, privexp);
 
     if (privexp) {
-#if 0
         /* Check the private key */
-        /**
-         * XXX: This doesn't work because we dont' have p and q:
-         * http://openssl.6102.n7.nabble.com/RSA-check-key-failure-0x407b093-value-missing-td50723.html
-         * https://github.com/openssl/openssl/blob/OpenSSL_1_1_1d/crypto/rsa/rsa_chk.c#L26-L30
-         */
-        if (RSA_check_key(rsa) != 1) {
-            err("Invalid private RSA key: %s\n",
-                    ERR_error_string(ERR_get_error(), NULL));
+        if (!check_rsa_sfm(rsa)) {
+            err("Invalid private RSA key\n");
+            return 2;
         }
-        err("RSA private key pair is valid\n");
-#endif
-
+        dbg("RSA key consistency ok\n");
 
         /* Write PEM-encoded RSA private key to stdout */
         if (!PEM_write_RSAPrivateKey(stdout, rsa, NULL, NULL, 0, NULL, NULL)) {
