@@ -183,6 +183,39 @@ static bool check_rsa_sfm(const RSA *rsa)
     return CheckRsaSfmKey(n, e, d);
 }
 
+static bool expand_rsa_sfm_to_crt(RSA *rsa)
+{
+    const BIGNUM *n, *e, *d;
+    BIGNUM *p, *q, *dp, *dq, *u;
+    int rc;
+
+    RSA_get0_key(rsa, &n, &e, &d);
+
+    /* Set up output bignums */
+    p  = BN_new();
+    q  = BN_new();
+    dp =  BN_new();
+    dq =  BN_new();
+    u  =  BN_new();
+
+    /* Compute the RSA CRT components from the modulus, public exponent, and
+     * private exponent.
+     */
+    rc = SfmToCrt(n, e, d,
+            p, q, dp, dq, u);
+    if (rc != 1) {
+        err("SfmToCrt() failed\n");
+        return false;
+    }
+
+    RSA_set0_factors(rsa, p, q);
+
+    /* openssl refers to these as dmp1, dmq1, iqmp */
+    RSA_set0_crt_params(rsa, dp, dq, u);
+
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
     BIGNUM *mod = NULL;
@@ -228,6 +261,12 @@ int main(int argc, char *argv[])
             return 2;
         }
         dbg("RSA key consistency ok\n");
+
+        /* Expand the private key to include factors and crt params */
+        if (!expand_rsa_sfm_to_crt(rsa)) {
+            err("Unable to expand RSA key\n");
+            return 2;
+        }
 
         /* Write PEM-encoded RSA private key to stdout */
         if (!PEM_write_RSAPrivateKey(stdout, rsa, NULL, NULL, 0, NULL, NULL)) {
