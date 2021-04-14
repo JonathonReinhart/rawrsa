@@ -1,0 +1,25 @@
+name: Build and Test
+
+# Run this workflow whenever a PR is created or pushed to.
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y scons python3-cryptography
+
+    - name: Run tests
+      run: |
+        ./test.sh
