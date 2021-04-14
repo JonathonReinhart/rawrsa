@@ -14,13 +14,22 @@
 #define err(fmt, ...)   \
     fprintf(stderr, "%s: " fmt, appname, ##__VA_ARGS__)
 
+#ifdef DEBUG
+# define USE_DEBUG  1
+#else
+# define USE_DEBUG  0
+#endif
+
+#define dbg(fmt, ...)   \
+    if (USE_DEBUG) fprintf(stderr, fmt, ##__VA_ARGS__)
+
 static const char* appname;
 
 static void print_bn(const char *what, const BIGNUM *bn)
 {
 #ifdef DEBUG
     char *str = BN_bn2hex(bn);
-    printf("%s (hex): %s\n", what, str);
+    fprintf(stderr, "%s (hex): %s\n", what, str);
     OPENSSL_free(str);
 #endif
 }
