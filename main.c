@@ -282,5 +282,6 @@ int main(int argc, char *argv[])
         }
     }
 
+    RSA_free(rsa);
     return 0;
 }
