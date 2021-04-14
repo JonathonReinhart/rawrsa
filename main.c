@@ -109,34 +109,60 @@ static void parse_opts(int argc, char *argv[])
     modfile = argv[0];
 }
 
+static BIGNUM *read_bignum_file(const char *path)
+{
+    FILE *f = NULL;
+    BIGNUM *res = NULL;
+    unsigned char *buf = NULL;
+    int filesize;
+
+    /* Open */
+    f = fopen(path, "rb");
+    if (!f) {
+        err("Failed to open \"%s\": %m\n", path);
+        goto out;
+    }
+
+    /* Get file size */
+    fseek(f, 0, SEEK_END);
+    filesize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    /* Allocate buffer */
+    buf = malloc(filesize);
+    if (!buf) {
+        err("Failed to allocate %d bytes\n", filesize);
+        goto out;
+    }
+
+    /* Read file */
+    if (fread(buf, 1, filesize, f) != filesize) {
+        err("Failed to read %s\n", path);
+        goto out;
+    }
+
+    res = BN_bin2bn(buf, filesize, NULL);
+    if (!res) {
+        err("BN_bin2bn() failed\n");
+        goto out;
+    }
+
+out:
+    if (f)
+        fclose(f);
+    free(buf);
+    return res;
+}
+
 int main(int argc, char *argv[])
 {
+    BIGNUM *mod = NULL;
+
     appname = basename(argv[0]);
     parse_opts(argc, argv);
 
-    /* Read modulus */
-    FILE *mf = fopen(modfile, "rb");
-    if (!mf) {
-        err("Failed to open \"%s\": %m\n", modfile);
-        return 1;
-    }
-
-    unsigned char buf[MAX_MOD_SIZE];
-    size_t n;
-    if ((n = fread(buf, 1, sizeof(buf), mf)) == 0) {
-        err("Failed to read %zu bytes of modulus\n", sizeof(buf));
-        return 1;
-    }
-    if (n == sizeof(buf) && !feof(mf)) {
-        err("Warning: modulus truncated to maximum size (%zu bytes)\n",
-                sizeof(buf));
-    }
-
-    fclose(mf);
-
-    BIGNUM *mod = BN_bin2bn(buf, n, NULL);
+    mod = read_bignum_file(modfile);
     if (!mod) {
-        err("BN_bin2bn() failed\n");
         return 1;
     }
     print_bn("Modulus", mod);
