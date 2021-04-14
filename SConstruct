@@ -3,4 +3,11 @@ env = Environment(
     #CPPDEFINES={'DEBUG': None},
 )
 
-env.Program('rawrsa', ['main.c'], LIBS=['crypto'])
+env.Program(
+    target = 'rawrsa',
+    source = [
+        'main.c',
+        'librsaconverter.c',
+    ],
+    LIBS=['crypto'],
+)
